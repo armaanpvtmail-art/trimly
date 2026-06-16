@@ -160,6 +160,21 @@ All mutations run through type-safe **server actions** (`src/server/actions/`)
 with zod validation, Redis cache invalidation, audit logging, and
 `revalidatePath`.
 
+## 🔀 Redirect engine & analytics (Phase 5)
+
+- **Public route** `app/[slug]/page.tsx` (force-dynamic, `noindex`) resolves the
+  slug via a **Redis-cached** lookup (`resolveLink`, invalidated on edit/disable).
+- Renders a **themed countdown experience** (`RedirectExperience`): gradient or
+  uploaded background/video/logo, an animated countdown ring, and a **Continue
+  now** button. `countdown = 0` redirects instantly.
+- Missing / disabled / expired links get a branded **unavailable** page.
+- **Per-click capture** (`recordClick`): UA parsing (device/browser/OS) via
+  `ua-parser-js`, geo from edge headers (Vercel/Cloudflare), **hashed IP** for
+  unique counting (never stored raw), referrer, and bot/prefetch filtering.
+  Updates denormalised `clickCount` / `uniqueCount` in a transaction.
+- **Detailed analytics** at `/analytics/[id]`: 30-day timeseries, device donut,
+  and country / city / browser / OS / referrer breakdowns + recent clicks.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -221,7 +236,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 - [x] **Phase 2** — NextAuth, register/login, email verify, forgot/reset, subscription gate
 - [x] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
 - [x] **Phase 4** — Dashboard shell, KPIs + charts, create/manage links, profile, subscription
-- [ ] **Phase 5** — Themed countdown redirect + analytics capture & charts
+- [x] **Phase 5** — Themed countdown redirect + per-click analytics & charts
 - [ ] **Phase 6** — Admin panel (users, payments, links, settings, audit)
 - [ ] **Phase 7** — Admin theme ZIP upload (validate / extract / register)
 - [ ] **Phase 8** — Security hardening, SEO, PWA

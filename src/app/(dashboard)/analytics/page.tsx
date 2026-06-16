@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { BarChart3, Link2, MousePointerClick, Trophy } from "lucide-react";
 import { requireUser } from "@/lib/auth/guards";
 import { prisma } from "@/lib/prisma";
@@ -60,7 +61,11 @@ export default async function AnalyticsPage() {
             <p className="text-sm text-muted-foreground">No data yet.</p>
           ) : (
             topLinks.map((l, i) => (
-              <div key={l.id} className="flex items-center gap-3 rounded-xl border p-3">
+              <Link
+                key={l.id}
+                href={`/analytics/${l.id}`}
+                className="flex items-center gap-3 rounded-xl border p-3 transition-colors hover:bg-muted/50"
+              >
                 <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                   {i + 1}
                 </span>
@@ -74,7 +79,7 @@ export default async function AnalyticsPage() {
                   <Badge variant="secondary">{formatNumber(l.uniqueCount)} unique</Badge>
                   <span className="font-semibold">{formatNumber(l.clickCount)}</span>
                 </div>
-              </div>
+              </Link>
             ))
           )}
         </CardContent>

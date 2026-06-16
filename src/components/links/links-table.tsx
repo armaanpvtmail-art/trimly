@@ -1,8 +1,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  BarChart3,
   ExternalLink,
   Loader2,
   MoreHorizontal,
@@ -299,6 +301,11 @@ function RowActions({
             <a href={shortUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink /> Open link
             </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/analytics/${row.id}`}>
+              <BarChart3 /> View analytics
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onEdit}>
             <Pencil /> Edit
