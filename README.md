@@ -175,6 +175,27 @@ with zod validation, Redis cache invalidation, audit logging, and
 - **Detailed analytics** at `/analytics/[id]`: 30-day timeseries, device donut,
   and country / city / browser / OS / referrer breakdowns + recent clicks.
 
+## 🛡️ Admin panel (Phase 6)
+
+A fully **separate** admin area at `/admin` with its own authentication —
+independent of user sessions.
+
+- **Admin auth** — `Admin` table + a signed **JWT cookie** (`jose`, HS256).
+  Edge middleware verifies the cookie for every `/admin/*` route (except
+  `/admin/login`); the panel layout re-checks the admin in the DB.
+- **Dashboard** — total users, active subscriptions, **revenue**, links, clicks,
+  a 30-day signups chart, and recent payments.
+- **Users** — search/filter, suspend / activate, **extend subscription**
+  (grant days), and delete.
+- **Payments** — every Cashfree transaction with status & transaction id.
+- **Links** — moderate any link platform-wide (open / disable / delete).
+- **Settings** — branding, plan price/name/duration, SEO, Cashfree env,
+  maintenance mode, and legal content (writes to `WebsiteSettings`).
+- **Audit logs** — chronological user + admin activity.
+
+Every admin mutation is recorded in `ActivityLog` (actor = ADMIN).
+Seed creates the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -237,7 +258,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 - [x] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
 - [x] **Phase 4** — Dashboard shell, KPIs + charts, create/manage links, profile, subscription
 - [x] **Phase 5** — Themed countdown redirect + per-click analytics & charts
-- [ ] **Phase 6** — Admin panel (users, payments, links, settings, audit)
+- [x] **Phase 6** — Admin panel (auth, dashboard, users, payments, links, settings, audit)
 - [ ] **Phase 7** — Admin theme ZIP upload (validate / extract / register)
 - [ ] **Phase 8** — Security hardening, SEO, PWA
 - [ ] **Phase 9** — Docker, Compose, Nginx, SSL, VPS deployment guide

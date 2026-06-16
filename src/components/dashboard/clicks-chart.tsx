@@ -19,23 +19,36 @@ function CustomTooltip({
   active,
   payload,
   label,
+  unitOne,
+  unitMany,
 }: {
   active?: boolean;
   payload?: { value: number }[];
   label?: string;
+  unitOne: string;
+  unitMany: string;
 }) {
   if (!active || !payload?.length) return null;
+  const v = payload[0]?.value ?? 0;
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 text-xs shadow-soft">
       <p className="font-medium text-foreground">{label}</p>
       <p className="text-muted-foreground">
-        {payload[0]?.value} {payload[0]?.value === 1 ? "click" : "clicks"}
+        {v} {v === 1 ? unitOne : unitMany}
       </p>
     </div>
   );
 }
 
-export function ClicksChart({ data }: { data: Point[] }) {
+export function ClicksChart({
+  data,
+  unitOne = "click",
+  unitMany = "clicks",
+}: {
+  data: Point[];
+  unitOne?: string;
+  unitMany?: string;
+}) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -69,7 +82,10 @@ export function ClicksChart({ data }: { data: Point[] }) {
           stroke="currentColor"
           className="text-muted-foreground"
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#6366f1", strokeOpacity: 0.2 }} />
+        <Tooltip
+          content={<CustomTooltip unitOne={unitOne} unitMany={unitMany} />}
+          cursor={{ stroke: "#6366f1", strokeOpacity: 0.2 }}
+        />
         <Area
           type="monotone"
           dataKey="clicks"

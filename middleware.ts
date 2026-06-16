@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { jwtVerify } from "jose";
 
 /**
- * Edge middleware: authentication gate.
- *
- * - Protects the dashboard + account areas: unauthenticated users are bounced
- *   to /login with a callbackUrl.
- * - The *subscription* gate (active plan required) is enforced in the
- *   dashboard server layout via `requireActiveSubscription()`, because it needs
- *   a DB read that can't run at the edge.
- * - Admin routes have their own separate auth (see Phase 6) and are excluded
- *   here.
+ * Edge middleware:
+ *  - User area: requires a NextAuth session (subscription gate is enforced in
+ *    the dashboard server layout).
+ *  - Admin area: requires a valid signed admin JWT cookie (separate auth).
  */
-const PROTECTED_PREFIXES = [
+const USER_PROTECTED = [
   "/dashboard",
   "/create",
   "/links",
@@ -24,25 +20,48 @@ const PROTECTED_PREFIXES = [
   "/subscribe",
 ];
 
+const ADMIN_COOKIE = "trimly_admin";
+
+function adminSecret(): Uint8Array {
+  return new TextEncoder().encode(
+    process.env.NEXTAUTH_SECRET || "trimly-admin-fallback-secret",
+  );
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const isProtected = PROTECTED_PREFIXES.some(
+  // ---- Admin area ----
+  if (pathname.startsWith("/admin")) {
+    if (pathname === "/admin/login") return NextResponse.next();
+    const token = req.cookies.get(ADMIN_COOKIE)?.value;
+    let valid = false;
+    if (token) {
+      try {
+        await jwtVerify(token, adminSecret());
+        valid = true;
+      } catch {
+        valid = false;
+      }
+    }
+    if (!valid) {
+      return NextResponse.redirect(new URL("/admin/login", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // ---- User area ----
+  const isProtected = USER_PROTECTED.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
   if (!isProtected) return NextResponse.next();
 
-  const token = await getToken({
-    req,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   if (!token) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
-
   return NextResponse.next();
 }
 
@@ -56,5 +75,6 @@ export const config = {
     "/profile/:path*",
     "/subscription/:path*",
     "/subscribe",
+    "/admin/:path*",
   ],
 };
