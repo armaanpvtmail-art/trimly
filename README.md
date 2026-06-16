@@ -137,6 +137,29 @@ audit and never activate.
   `CASHFREE_WEBHOOK_SECRET`.
 - The return URL (`/payment/return`) is configured automatically per order.
 
+## 📊 Dashboard (Phase 4)
+
+A premium, responsive app shell (`src/components/dashboard/`):
+- **Sidebar** (desktop) + **bottom nav** (mobile), active-route highlighting,
+  avatar **user menu**, theme toggle, and a plan-status card.
+- **Home** — animated KPI cards (links, clicks, today, plan) + a 14-day Recharts
+  area chart + recent links + recent activity.
+- **Create Link** — destination URL, optional title, optional custom slug
+  (validated, reserved-word protected), **theme picker**, **countdown** selector
+  → result card with short URL, **copy**, **QR (PNG download)**, **share**.
+- **My Links** — searchable / filterable / sortable table with inline
+  **enable-disable toggle**, **edit** dialog, **delete** confirm, copy & QR.
+- **Analytics** — overview KPIs, 30-day chart, top-performing links.
+- **Themes** — gallery of available redirect themes.
+- **Subscription** — current plan, cycle progress, renew/buy-again (Cashfree),
+  full payment history.
+- **Profile** — update name, change password (current-password verified),
+  membership summary.
+
+All mutations run through type-safe **server actions** (`src/server/actions/`)
+with zod validation, Redis cache invalidation, audit logging, and
+`revalidatePath`.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -197,7 +220,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 - [x] **Phase 1** — Prisma schema (all models), client, seed
 - [x] **Phase 2** — NextAuth, register/login, email verify, forgot/reset, subscription gate
 - [x] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
-- [ ] **Phase 4** — User dashboard, create link, my links, profile, subscription
+- [x] **Phase 4** — Dashboard shell, KPIs + charts, create/manage links, profile, subscription
 - [ ] **Phase 5** — Themed countdown redirect + analytics capture & charts
 - [ ] **Phase 6** — Admin panel (users, payments, links, settings, audit)
 - [ ] **Phase 7** — Admin theme ZIP upload (validate / extract / register)

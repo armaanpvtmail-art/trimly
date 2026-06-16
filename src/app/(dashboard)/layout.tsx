@@ -1,17 +1,24 @@
 import { requireActiveSubscription } from "@/lib/auth/guards";
+import { daysRemaining } from "@/lib/utils";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
 /**
- * Protected dashboard shell.
- *
- * The subscription gate lives here: `requireActiveSubscription()` redirects
- * unauthenticated users to /login and unsubscribed users to /subscribe.
- * (The full sidebar + navigation chrome is added in Phase 4.)
+ * Protected dashboard shell. `requireActiveSubscription()` enforces both the
+ * auth gate (→ /login) and the subscription gate (→ /subscribe).
  */
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireActiveSubscription();
-  return <div className="min-h-screen bg-background">{children}</div>;
+  const { user, subscription } = await requireActiveSubscription();
+
+  return (
+    <DashboardShell
+      user={{ name: user.name, email: user.email, image: user.image }}
+      daysRemaining={daysRemaining(subscription.expiresAt)}
+    >
+      {children}
+    </DashboardShell>
+  );
 }
