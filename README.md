@@ -108,6 +108,35 @@ audit logs are preserved with `SetNull`). Hot lookup columns are indexed.
 > subscription gate then routes them to `/subscribe` until they have an active
 > plan.
 
+## 💳 Payments — Cashfree (Phase 3)
+
+Production-mode Cashfree PG integration (API version `2023-08-01`).
+
+**Flow:** Subscribe → `createSubscriptionOrder` (server action) creates a
+`CashfreeOrder` row + Cashfree order → client opens **hosted checkout**
+(`@cashfreepayments/cashfree-js`) → Cashfree redirects to
+`/payment/return?order_id=…` → the page **polls** `/api/payment/status`, which
+**authoritatively verifies** the order against Cashfree and activates the plan.
+
+**Two activation paths, both idempotent:**
+1. **Webhook** `POST /api/webhooks/cashfree` — verifies the `x-webhook-signature`
+   HMAC over `timestamp + rawBody`, then records the payment & activates.
+2. **Return verification** — server-side `getOrder` + `getOrderPayments`, never
+   trusting client redirect params.
+
+Idempotency is guaranteed by the **unique `Payment.cfPaymentId`** — duplicate
+webhooks, retries, and webhook↔return races all resolve to a single activation
+inside a DB transaction. New subscriptions are created; existing active ones are
+**extended** (renewals). Failed / dropped / cancelled outcomes are recorded for
+audit and never activate.
+
+**Setup on your server:**
+- Set `CASHFREE_ENV=PRODUCTION`, `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY`.
+- In the Cashfree dashboard → Developers → **Webhooks**, add
+  `https://YOUR_DOMAIN/api/webhooks/cashfree` and copy its secret into
+  `CASHFREE_WEBHOOK_SECRET`.
+- The return URL (`/payment/return`) is configured automatically per order.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -167,7 +196,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 - [x] **Phase 0** — Scaffold, design system, providers, landing page
 - [x] **Phase 1** — Prisma schema (all models), client, seed
 - [x] **Phase 2** — NextAuth, register/login, email verify, forgot/reset, subscription gate
-- [ ] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
+- [x] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
 - [ ] **Phase 4** — User dashboard, create link, my links, profile, subscription
 - [ ] **Phase 5** — Themed countdown redirect + analytics capture & charts
 - [ ] **Phase 6** — Admin panel (users, payments, links, settings, audit)
