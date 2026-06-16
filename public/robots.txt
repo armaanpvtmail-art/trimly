@@ -1,0 +1,19 @@
+# Trimly robots.txt
+# Generated at build time via src/app/robots.ts
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /create
+Disallow: /links
+Disallow: /analytics
+Disallow: /profile
+Disallow: /subscribe
+Disallow: /api
+Disallow: /payment
+
+User-agent: AdsBot-Google
+Allow: /
+
+Sitemap: https://trimly.app/sitemap.xml
