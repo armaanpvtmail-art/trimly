@@ -196,6 +196,39 @@ independent of user sessions.
 Every admin mutation is recorded in `ActivityLog` (actor = ADMIN).
 Seed creates the first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
+## 🎨 Custom themes (Phase 7)
+
+Admins upload a theme **ZIP** at `/admin/themes`. The pipeline:
+**validate → sanitize → extract → store → register → preview → enable**.
+
+- `processThemeZip` (server) validates `theme.json`, requires the entry HTML,
+  blocks path-traversal & disallowed file types, and enforces size/count limits.
+- Files are written under `THEME_UPLOAD_DIR` (`/public/uploads/themes/<slug>/`);
+  a `Theme` row + one `ThemeAsset` per file are created.
+- Manage: enable/disable, edit metadata (name/description/countdown), live
+  **preview** (iframe), and delete (built-ins protected; files removed from disk).
+
+**Theme ZIP format** (see [`theme-examples/sample-neon`](./theme-examples/sample-neon)):
+
+```
+theme.json     # manifest: name, mode, palette, countdownDefault, entry, render
+index.html     # entry template
+style.css      # optional
+script.js      # optional
+assets/…       # optional images / video / fonts
+```
+
+**Author hook contract** — uploaded HTML themes render in a sandboxed iframe at
+`/api/themes/<slug>/render?to=<dest>&c=<seconds>`. Trimly injects a `<base>` tag
+and a bootstrap script that:
+- updates any `[data-trimly-countdown]` element each second,
+- redirects the top window to the destination when it hits 0,
+- wires `[data-trimly-continue]` elements to skip the countdown,
+- exposes `window.TRIMLY = { destination, countdown }`.
+
+Set `"render": "react"` in `theme.json` to instead reuse Trimly's built-in
+countdown UI with your palette/assets.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -259,7 +292,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 - [x] **Phase 4** — Dashboard shell, KPIs + charts, create/manage links, profile, subscription
 - [x] **Phase 5** — Themed countdown redirect + per-click analytics & charts
 - [x] **Phase 6** — Admin panel (auth, dashboard, users, payments, links, settings, audit)
-- [ ] **Phase 7** — Admin theme ZIP upload (validate / extract / register)
+- [x] **Phase 7** — Admin theme ZIP upload (validate / extract / register / render)
 - [ ] **Phase 8** — Security hardening, SEO, PWA
 - [ ] **Phase 9** — Docker, Compose, Nginx, SSL, VPS deployment guide
 

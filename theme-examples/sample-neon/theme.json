@@ -1,0 +1,11 @@
+{
+  "name": "Sample Neon",
+  "description": "A sample uploadable Trimly theme showing the hook contract.",
+  "version": "1.0.0",
+  "mode": "dark",
+  "render": "html",
+  "countdownDefault": 5,
+  "palette": { "from": "#0ea5e9", "via": "#6366f1", "to": "#a855f7" },
+  "entry": "index.html",
+  "preview": "preview.svg"
+}

@@ -5,6 +5,7 @@ import type { LinkStatus } from "@prisma/client";
 export interface ResolvedTheme {
   name: string;
   config: unknown;
+  entryHtml: string | null;
   backgroundImage: string | null;
   backgroundVideo: string | null;
   logo: string | null;
@@ -36,6 +37,7 @@ export async function resolveLink(slug: string): Promise<ResolvedLink | null> {
         select: {
           name: true,
           config: true,
+          entryHtml: true,
           backgroundImage: true,
           backgroundVideo: true,
           logo: true,
@@ -57,6 +59,7 @@ export async function resolveLink(slug: string): Promise<ResolvedLink | null> {
       ? {
           name: link.theme.name,
           config: link.theme.config,
+          entryHtml: link.theme.entryHtml,
           backgroundImage: link.theme.backgroundImage,
           backgroundVideo: link.theme.backgroundVideo,
           logo: link.theme.logo,

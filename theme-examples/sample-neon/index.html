@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting…</title>
+    <!-- Trimly injects <base> so relative paths like style.css resolve correctly. -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="card">
+      <div class="ring">
+        <!-- Trimly updates this element every second -->
+        <span data-trimly-countdown>5</span>
+      </div>
+      <p class="muted">You're being redirected…</p>
+      <!-- Clicking this skips the countdown -->
+      <button data-trimly-continue class="btn">Continue now →</button>
+      <p class="brand">Secured &amp; shortened by Trimly</p>
+    </main>
+  </body>
+</html>

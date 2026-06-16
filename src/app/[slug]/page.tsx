@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { resolveLink } from "@/server/queries/redirect";
 import { recordClick } from "@/server/analytics";
 import { RedirectExperience } from "@/components/redirect/redirect-experience";
+import { ThemeIframe } from "@/components/redirect/theme-iframe";
 import { LinkUnavailable } from "@/components/redirect/link-unavailable";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,21 @@ export default async function SlugPage({
     await recordClick(link.id, await headers());
   } catch {
     /* analytics must not break redirects */
+  }
+
+  // Uploaded HTML themes render in a sandboxed iframe; system/react themes use
+  // the built-in countdown experience.
+  const renderMode = (link.theme?.config as { render?: string } | null)?.render;
+  const useIframe = Boolean(link.theme?.entryHtml) && renderMode !== "react";
+
+  if (useIframe && link.theme) {
+    return (
+      <ThemeIframe
+        slug={link.slug}
+        destinationUrl={link.destinationUrl}
+        countdownSeconds={link.countdownSeconds}
+      />
+    );
   }
 
   return (
