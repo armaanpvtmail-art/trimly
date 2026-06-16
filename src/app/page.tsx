@@ -15,7 +15,7 @@ import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SplashScreen } from "@/components/brand/splash-screen";
 import { formatINR } from "@/lib/utils";
-import { getServerEnv } from "@/lib/env";
+import { getPlanConfig } from "@/lib/env";
 
 const features = [
   {
@@ -60,8 +60,8 @@ const planFeatures = [
 ];
 
 export default function LandingPage() {
-  const env = getServerEnv();
-  const price = env.PLAN_PRICE_INR;
+  const plan = getPlanConfig();
+  const price = plan.priceInr;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -166,7 +166,7 @@ export default function LandingPage() {
               <span className="mb-1.5 text-muted-foreground">/month</span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              Unlock the full Trimly experience. Renewed every {env.PLAN_DURATION_DAYS} days.
+              Unlock the full Trimly experience. Renewed every {plan.durationDays} days.
             </p>
             <ul className="mt-6 space-y-3">
               {planFeatures.map((feat) => (
@@ -190,7 +190,7 @@ export default function LandingPage() {
         <div className="container flex flex-col items-center justify-between gap-4 py-10 md:flex-row">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} {env.PLAN_CURRENCY === "INR" ? "Trimly" : "Trimly"}. All rights reserved.
+            © {new Date().getFullYear()} Trimly. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-muted-foreground">
             <Link href="/legal/privacy" className="hover:text-foreground">

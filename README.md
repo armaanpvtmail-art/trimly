@@ -83,6 +83,31 @@ audit logs are preserved with `SetNull`). Hot lookup columns are indexed.
 
 ---
 
+## 🔑 Authentication & gating (Phase 2)
+
+- **NextAuth** Credentials provider with **JWT sessions** (`src/lib/auth/`).
+- **Register** (`/register`) → server action hashes the password (bcrypt, 12
+  rounds), creates the user, emails a verification link, then auto signs-in.
+- **Login** (`/login`) — split-screen, "keep me signed in", maps suspended /
+  invalid errors to friendly toasts.
+- **Forgot / reset password** (`/forgot-password`, `/reset-password`) — tokenised
+  (1h expiry), no account-enumeration leak.
+- **Email verification** (`/verify-email?token=…`) — 24h token, works logged-in
+  or out.
+- **Branded transactional emails** via SMTP (`src/lib/mail.ts`); if SMTP isn't
+  configured the link is logged to the server console so dev flows still work.
+- **Gating:** edge `middleware.ts` requires auth for `/dashboard`, `/create`,
+  `/links`, … and the **subscription gate** lives in the dashboard server
+  layout (`requireActiveSubscription()`) → unsubscribed users are sent to
+  `/subscribe` (the Premium Access paywall).
+- **Audit logging:** logins, registrations and password events are written to
+  `ActivityLog`.
+
+> Routing intent: splash (on `/`) → session check → `/login` if anonymous;
+> authenticated users hitting auth pages are bounced to `/dashboard`, and the
+> subscription gate then routes them to `/subscribe` until they have an active
+> plan.
+
 ## 🚀 Local development
 
 ### Prerequisites
@@ -141,7 +166,7 @@ committed. Cashfree runs in **production mode** — drop in your production
 
 - [x] **Phase 0** — Scaffold, design system, providers, landing page
 - [x] **Phase 1** — Prisma schema (all models), client, seed
-- [ ] **Phase 2** — NextAuth, register/login, splash routing, subscription gate
+- [x] **Phase 2** — NextAuth, register/login, email verify, forgot/reset, subscription gate
 - [ ] **Phase 3** — Cashfree order/checkout/webhook → subscription activation
 - [ ] **Phase 4** — User dashboard, create link, my links, profile, subscription
 - [ ] **Phase 5** — Themed countdown redirect + analytics capture & charts

@@ -88,4 +88,19 @@ export const clientEnv = clientSchema.parse({
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
 });
 
+/**
+ * Lightweight plan config reader with safe defaults — does NOT require the full
+ * server env (DB/secret). Safe to call from statically-rendered public pages.
+ * For settings that can be overridden at runtime, prefer reading WebsiteSettings.
+ */
+export function getPlanConfig() {
+  return {
+    priceInr: Number(process.env.PLAN_PRICE_INR || 90),
+    name: process.env.PLAN_NAME || "Premium Monthly",
+    durationDays: Number(process.env.PLAN_DURATION_DAYS || 30),
+    currency: process.env.PLAN_CURRENCY || "INR",
+  };
+}
+
 export type ServerEnv = z.infer<typeof serverSchema>;
+export type PlanConfig = ReturnType<typeof getPlanConfig>;
