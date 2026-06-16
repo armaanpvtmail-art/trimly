@@ -1,0 +1,451 @@
+// ============================================================================
+// Trimly — Prisma schema (PostgreSQL ONLY)
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  SUPPORT
+}
+
+enum AdminStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum PlanType {
+  PREMIUM_MONTHLY
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  USER_DROPPED
+  REFUNDED
+}
+
+enum OrderStatus {
+  CREATED
+  ACTIVE
+  PAID
+  EXPIRED
+  TERMINATED
+  FAILED
+}
+
+enum LinkStatus {
+  ACTIVE
+  DISABLED
+  EXPIRED
+}
+
+enum ThemeStatus {
+  DRAFT
+  ENABLED
+  DISABLED
+}
+
+enum ThemeAssetType {
+  HTML
+  CSS
+  JS
+  IMAGE
+  VIDEO
+  FONT
+  JSON
+  OTHER
+}
+
+enum DeviceType {
+  DESKTOP
+  MOBILE
+  TABLET
+  BOT
+  UNKNOWN
+}
+
+enum ActorType {
+  USER
+  ADMIN
+  SYSTEM
+}
+
+// ----------------------------------------------------------------------------
+// Users & auth
+// ----------------------------------------------------------------------------
+
+model User {
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  emailVerified DateTime?
+  passwordHash  String
+  image         String?
+  status        UserStatus @default(ACTIVE)
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  subscriptions          Subscription[]
+  payments               Payment[]
+  orders                 CashfreeOrder[]
+  links                  ShortLink[]
+  emailTokens            EmailVerificationToken[]
+  passwordResetTokens    PasswordResetToken[]
+  activityLogs           ActivityLog[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Admin {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         AdminRole   @default(ADMIN)
+  status       AdminStatus @default(ACTIVE)
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  uploadedThemes Theme[]
+  activityLogs   ActivityLog[]
+
+  @@index([role])
+  @@index([status])
+  @@map("admins")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ----------------------------------------------------------------------------
+// Subscriptions & payments
+// ----------------------------------------------------------------------------
+
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String
+  plan        PlanType           @default(PREMIUM_MONTHLY)
+  status      SubscriptionStatus @default(PENDING)
+  priceInr    Decimal            @default(90) @db.Decimal(10, 2)
+  currency    String             @default("INR")
+  startedAt   DateTime?
+  expiresAt   DateTime?
+  cancelledAt DateTime?
+  autoRenew   Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("subscriptions")
+}
+
+model CashfreeOrder {
+  id               String      @id @default(cuid())
+  userId           String
+  // Merchant order id we generate and send to Cashfree (unique).
+  orderId          String      @unique
+  // Cashfree's own order id (cf_order_id) returned by the API.
+  cfOrderId        String?
+  orderAmount      Decimal     @db.Decimal(10, 2)
+  orderCurrency    String      @default("INR")
+  orderStatus      OrderStatus @default(CREATED)
+  // Used by the Cashfree checkout JS SDK on the client.
+  paymentSessionId String?
+  orderNote        String?
+  customerId       String?
+  customerEmail    String?
+  customerPhone    String?
+  returnUrl        String?
+  notifyUrl        String?
+  raw              Json?
+  expiresAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([userId])
+  @@index([orderStatus])
+  @@index([createdAt])
+  @@map("cashfree_orders")
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  userId         String
+  subscriptionId String?
+  orderId        String? // FK -> CashfreeOrder.id (internal id)
+  amount         Decimal       @db.Decimal(10, 2)
+  currency       String        @default("INR")
+  status         PaymentStatus @default(PENDING)
+  method         String?
+  // Cashfree payment id / transaction id (cf_payment_id).
+  cfPaymentId    String?       @unique
+  bankReference  String?
+  paymentTime    DateTime?
+  // Full raw webhook / verify payload for auditing & dispute handling.
+  raw            Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  order        CashfreeOrder? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([subscriptionId])
+  @@map("payments")
+}
+
+// ----------------------------------------------------------------------------
+// Links, themes & analytics
+// ----------------------------------------------------------------------------
+
+model ShortLink {
+  id               String     @id @default(cuid())
+  userId           String
+  slug             String     @unique
+  destinationUrl   String     @db.Text
+  title            String?
+  themeId          String?
+  countdownSeconds Int        @default(5)
+  status           LinkStatus @default(ACTIVE)
+  // Optional per-link redirect-page SEO overrides.
+  metaTitle        String?
+  metaDescription  String?
+  ogImage          String?
+  // Denormalised counters kept in sync on each click for fast dashboards.
+  clickCount       Int        @default(0)
+  uniqueCount      Int        @default(0)
+  lastClickedAt    DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme     Theme?          @relation(fields: [themeId], references: [id], onDelete: SetNull)
+  analytics LinkAnalytics[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([themeId])
+  @@index([createdAt])
+  @@map("short_links")
+}
+
+model LinkAnalytics {
+  id        String     @id @default(cuid())
+  linkId    String
+  // Hashed IP (sha256 + salt) — never store raw IPs.
+  ipHash    String?
+  country   String?
+  countryCode String?
+  city      String?
+  region    String?
+  device    DeviceType @default(UNKNOWN)
+  browser   String?
+  os        String?
+  referrer  String?    @db.Text
+  userAgent String?    @db.Text
+  isUnique  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  link ShortLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([createdAt])
+  @@index([country])
+  @@index([device])
+  @@index([linkId, createdAt])
+  @@map("link_analytics")
+}
+
+model Theme {
+  id               String      @id @default(cuid())
+  name             String
+  slug             String      @unique
+  description      String?
+  status           ThemeStatus @default(ENABLED)
+  isSystem         Boolean     @default(false)
+  version          String      @default("1.0.0")
+  // Parsed theme.json (colors, fonts, custom settings, animation config).
+  config           Json?
+  entryHtml        String? // relative path to index.html within the theme folder
+  folderPath       String? // disk/storage folder where assets were extracted
+  previewImage     String?
+  backgroundImage  String?
+  backgroundVideo  String?
+  logo             String?
+  countdownDefault Int         @default(5)
+  uploadedById     String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  uploadedBy Admin?       @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  assets     ThemeAsset[]
+  links      ShortLink[]
+
+  @@index([status])
+  @@map("themes")
+}
+
+model ThemeAsset {
+  id        String         @id @default(cuid())
+  themeId   String
+  type      ThemeAssetType
+  fileName  String
+  filePath  String
+  url       String
+  mimeType  String?
+  sizeBytes Int?
+  createdAt DateTime       @default(now())
+
+  theme Theme @relation(fields: [themeId], references: [id], onDelete: Cascade)
+
+  @@index([themeId])
+  @@index([type])
+  @@map("theme_assets")
+}
+
+// ----------------------------------------------------------------------------
+// Platform settings & audit
+// ----------------------------------------------------------------------------
+
+model WebsiteSettings {
+  id        String @id @default("singleton")
+  siteName  String @default("Trimly")
+  tagline   String @default("Premium links, beautifully short.")
+  logoUrl   String?
+  faviconUrl String?
+
+  supportEmail   String?
+  contactPhone   String?
+  contactAddress String?
+
+  // SEO
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String?
+  ogImage        String?
+
+  // Maintenance
+  maintenanceMode    Boolean @default(false)
+  maintenanceMessage String?
+
+  // SMTP (secrets recommended via env; DB values act as overrides)
+  smtpHost     String?
+  smtpPort     Int?
+  smtpSecure   Boolean @default(false)
+  smtpUser     String?
+  smtpPassword String?
+  smtpFrom     String?
+
+  // Cashfree (App ID may live here; secret key strongly recommended in env)
+  cashfreeEnv           String  @default("PRODUCTION")
+  cashfreeAppId         String?
+  cashfreeSecretKey     String?
+  cashfreeWebhookSecret String?
+
+  // Plan config (overrides env defaults when set)
+  planPriceInr     Decimal @default(90) @db.Decimal(10, 2)
+  planName         String  @default("Premium Monthly")
+  planDurationDays Int     @default(30)
+  planCurrency     String  @default("INR")
+
+  // Legal
+  privacyPolicy   String? @db.Text
+  termsOfService  String? @db.Text
+
+  updatedAt DateTime @updatedAt
+
+  @@map("website_settings")
+}
+
+model ActivityLog {
+  id          String    @id @default(cuid())
+  actorType   ActorType @default(SYSTEM)
+  userId      String?
+  adminId     String?
+  action      String // e.g. "auth.login", "link.create", "payment.success"
+  entityType  String? // e.g. "ShortLink", "Payment"
+  entityId    String?
+  description String?   @db.Text
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  user  User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  admin Admin? @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([actorType])
+  @@index([userId])
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("activity_logs")
+}

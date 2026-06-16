@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 246 80% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 246 80% 96%;
+    --accent-foreground: 246 80% 40%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 246 80% 60%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 224 32% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 224 30% 9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 30% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 250 95% 70%;
+    --primary-foreground: 224 32% 6%;
+
+    --secondary: 223 24% 16%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 223 24% 14%;
+    --muted-foreground: 217 15% 62%;
+
+    --accent: 250 40% 20%;
+    --accent-foreground: 250 95% 85%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 65% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 224 32% 6%;
+
+    --border: 223 24% 18%;
+    --input: 223 24% 18%;
+    --ring: 250 95% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    @apply bg-primary/20;
+  }
+}
+
+@layer components {
+  /* Glassmorphism surface */
+  .glass {
+    @apply border border-white/10 bg-white/60 backdrop-blur-xl dark:bg-white/5;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-fuchsia-500 to-indigo-500 bg-clip-text text-transparent;
+  }
+
+  /* Premium card */
+  .card-premium {
+    @apply rounded-2xl border bg-card text-card-foreground shadow-card transition-all duration-300;
+  }
+  .card-premium:hover {
+    @apply shadow-soft;
+  }
+
+  /* Animated grid background */
+  .bg-grid {
+    background-size: 40px 40px;
+    @apply bg-grid-pattern;
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md bg-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    content: "";
+    animation: shimmer 1.8s infinite;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-muted-foreground/30;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+
+html {
+  scroll-behavior: smooth;
+}
